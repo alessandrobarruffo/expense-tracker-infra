@@ -1,0 +1,41 @@
+services:
+  db:
+    image: mysql/mysql-server:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-expense-db}
+      MYSQL_USER: ${DB_USER:-user}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    ports:
+      - '3306:3306'
+    expose:
+      - '3306'
+    volumes:
+      - my-db:/var/lib/mysql
+
+  backend:
+    image: acrexpensetracker-ghazhxaggbeqeah9.azurecr.io/expensetracker
+    restart: always
+    ports:
+      - '8080:8080'
+    depends_on:
+      - db
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-local}
+      - SECURITY_SECRET_KEY=${SECURITY_SECRET_KEY}
+      - DB_URL=jdbc:mysql://db:3306/${DB_NAME:-expense-db}?useSSL=false&allowPublicKeyRetrieval=true
+      - DB_USER=${DB_USER:-user}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:4200}
+
+  frontend:
+    build: ../expense-tracker-ng
+    restart: always
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+
+volumes:
+  my-db:
